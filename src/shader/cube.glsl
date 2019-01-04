@@ -13,7 +13,6 @@ out vec3 texCoordVar;
 
 void main()
 {
-	// ToDo
 	texCoordVar = texCoord;
 
 	mat4 mvp = projMatrix * mvMatrix;
@@ -28,7 +27,5 @@ out vec4 fragColor;
 
 void main()
 {
-   // ToDo
-
 	fragColor = vec4(texCoordVar, 1.0f);
 }

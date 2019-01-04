@@ -153,6 +153,8 @@ void GLWidget::paintGL()
 	m_programCube->setUniformValue(m_programCube->uniformLocation("mvMatrix"), modelView);
 	m_programCube->setUniformValue(m_programCube->uniformLocation("projMatrix"), projection);
 
+
+
 	// 1. render front faces to FBO
 
 	// ToDo
@@ -163,73 +165,85 @@ void GLWidget::paintGL()
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
+	glCullFace(GL_BACK);
 
-	//TODO render to texture
-	GLuint front_tex;
-	glGenTextures(1, &front_tex);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, front_tex);	
+	//render to texturex
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width(), height(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, front_tex, 0);
+
 
 	m_FBO_frontFaces->release();
 
 	
 	// 2. render back faces to FBO
 	
-	// ToDo
 
 	m_FBO_backFaces->bind();
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glCullFace(GL_FRONT);
 
-	//TODO render to texture
-	GLuint back_tex;
-	glGenTextures(1, &back_tex);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, back_tex);
+	//render to texture
 
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width(), height(), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
+
+
 
 	m_FBO_backFaces->release();
 
+	vaoBinder.release();
 
-	m_programCube->release();
 
-	// 3. render the volume
-	
-	// ToDo
+	// 3. render the volume	
+
+
+	glCullFace(GL_BACK);
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			
+
+	//set render mode
 
 	//bind quad
 	QOpenGLVertexArrayObject::Binder vaoBinder2(&m_vaoQuad);
 	m_programVolume->bind();
 
-	GLuint vol_tex;
-	glGenTextures(1, &vol_tex);
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_3D, vol_tex);
+	m_programVolume->setUniformValue(m_programVolume->uniformLocation("renderingMode"), m_renderingMode);
 
+	m_programVolume->setUniformValue("frontFaces", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_FBO_frontFaces->texture());
+
+	m_programVolume->setUniformValue("backFaces", 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_FBO_backFaces->texture());
+
+	m_programVolume->setUniformValue("volume", 2);
+	glActiveTexture(GL_TEXTURE2);
+	m_VolumeTexture->bind();
+	
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
 
-	glEnable(GL_DEPTH_TEST);
+	glActiveTexture(0);
+	m_programVolume->release();
+	
+	vaoBinder2.release();
 
+	glDisable(GL_CULL_FACE);
 }
+
+
+
+
+
+
+
+
 
 void GLWidget::initializeGL()
 {
